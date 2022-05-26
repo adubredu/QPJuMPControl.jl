@@ -1,4 +1,4 @@
-module QPControl
+module QPJuMPControl
 
 using LinearAlgebra
 using RigidBodyDynamics
