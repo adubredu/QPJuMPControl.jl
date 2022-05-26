@@ -15,6 +15,12 @@ const RBD = RigidBodyDynamics
 include("tasks.jl")
 
 export 
-    SpatialAccelerationTask
+    SpatialAccelerationTask,
+    AngularAccelerationTask,
+    LinearAccelerationTask,
+    LinearMomentumRateTask,
+    JointAccelerationTask,
+    MomentumRateTask,
+    PointAccelerationTask
 
 end

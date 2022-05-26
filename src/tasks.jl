@@ -95,7 +95,7 @@ struct LinearAccelerationTask <: AbstractMotionTask
         baseframe = default_frame(source(path))
         jacobian = GeometricJacobian(bodyframe, baseframe, frame, zeros(3, nv), zeros(3, nv))
         desired = Ref(FreeVector3D(frame, 0.0,0.0,0.0))
-        new(path, jacobian, deisred)
+        new(path, jacobian, desired)
     end
 end
 
@@ -151,14 +151,14 @@ function task_error(task::PointAccelerationTask, qpmodel, state::MechanismState,
     frame = task.desired[].frame 
     point_in_task_frame = transform(state, task.point, frame)
 
-    J = point_jacobian!(task.jacobian, state, task.path, world_to_desired)
+    J = point_jacobian!(task.jacobian, state, task.path, point_in_task_frame)
 
     bias = -bias_acceleration(state, source(task.path)) + bias_acceleration(state, target(task.path))
     J̇v = transform(state, bias, task.desired[].frame)
 
     desired =  task.desired[].v 
 
-    T = transform(state, relative_twist(state, target(taskpath), source(task.path)), frame)
+    T = transform(state, relative_twist(state, target(task.path), source(task.path)), frame)
     @framecheck T.frame frame 
     ω = angular(T)
     ṗ = point_velocity(T, point_in_task_frame)
@@ -204,7 +204,7 @@ function momentum_rate_task_params(task, qpmodel, state, v̇)
     world_to_centroidal = inv(centroidal_to_world)
     A = momentum_matrix!(task.momentum_matrix, state, world_to_centroidal)
 
-    Ȧv = transform(state, momentum_rate_bias(state, world_to_centroidal))
+    Ȧv = transform(momentum_rate_bias(state), world_to_centroidal)
 
     return A, Ȧv 
 end

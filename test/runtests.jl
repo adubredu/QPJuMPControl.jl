@@ -4,6 +4,7 @@ using RigidBodyDynamics
 using JuMP 
 using OSQP 
 using Random 
+using LinearAlgebra
 using StaticArrays
 
 const QPC = QPJuMPControl 
