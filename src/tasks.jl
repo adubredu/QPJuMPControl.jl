@@ -171,3 +171,80 @@ struct JointAccelerationTask{JT<:JointType{Float64}} <: AbstractMotionTask
     desired::Vector{Float64}
 
     function JointAccelerationTask(joint::Joint{Float64, JT}) where {JT<:JointType{Float64}}
+        new{JT}(joint, zeros(num_velocities(joint)))
+    end
+end
+
+dimension(task::JointAccelerationTask) = length(task.desired)
+setdesired!(task::JointAccelerationTask, desired) = set_velocity!(task.desired, task.joint, desired)
+
+function task_error(task::JointAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
+    desired = task.desired 
+    v̇joint = v̇[velocity_range(state, task.joint)]
+    return v̇joint - desired 
+end
+
+
+struct MomentumRateTask <: AbstractMotionTask
+    momentum_matrix::MomentumMatrix{Matrix{Float64}}
+    desired::Base.RefValue{Wrench{Float64}}
+
+    function MomentumRateTask(mechanism::Mechanism, centroidalframe::CartesianFrame3D)
+        nv = num_velocities(mechanism)
+        momentum_matrix = MomentumMatrix(centroidalframe, zeros(3, nv), zeros(3, nv))
+        desired = Ref(zero(Wrench{Float64}, centroidalframe))
+        new(momentum_matrix, desired)
+    end
+end
+
+function momentum_rate_task_params(task, qpmodel, state, v̇)
+    centroidalframe = task.momentum_matrix.frame 
+    com = center_of_mass(state)
+    centroidal_to_world = Transform3D(centroidalframe, com.frame, com.v)
+    world_to_centroidal = inv(centroidal_to_world)
+    A = momentum_matrix!(task.momentum_matrix, state, world_to_centroidal)
+
+    Ȧv = transform(state, momentum_rate_bias(state, world_to_centroidal))
+
+    return A, Ȧv 
+end
+
+dimension(task::MomentumRateTask) = 6
+
+function setdesired!(task::MomentumRateTask, desired::Wrench)
+    @framecheck task.momentum_matrix.frame desired.frame 
+    task.desired[] = desired 
+end
+
+function task_error(task::MomentumRateTask, qpmodel, state::MechanismState, v̇::Vector)
+    A, Ȧv = momentum_rate_task_params(task, qpmodel, state, v̇)
+    desired = task.desired[]
+    return [angular(A) * v̇ + angular(Ȧv) - angular(desired);
+            linear(A) * v̇ + linear(Ȧv) - linear(desired)]
+end
+
+
+struct LinearMomentumRateTask <: AbstractMotionTask
+    momentum_matrix::MomentumMatrix{Matrix{Float64}}
+    desired::Base.RefValue{FreeVector3D{SVector{3, Float64}}}
+
+    function LinearMomentumRateTask(mechanism::Mechanism, centroidalframe::CartesianFrame3D = CartesianFrame3D())
+        nv = num_velocities(mechanism)
+        momentum_matrix = MomentumMatrix(centroidalframe, zeros(3,nv), zeros(3, nv))
+        desired = Ref(FreeVector3D(centroidalframe, 0.0, 0.0, 0.0))
+        new(momentum_matrix, desired)
+    end
+end
+
+dimension(task::LinearMomentumRateTask) = 3 
+
+function setdesired!(task::LinearMomentumRateTask, desired::FreeVector3D)
+    @framecheck task.momentum_matrix.frame desired.frame 
+    task.desired[] = desired 
+end
+
+function task_error(task::LinearMomentumRateTask, qpmodel, state::MechanismState, v̇::Vector)
+    A, Ȧ = momentum_rate_task_params(task, qpmodel, state, v̇)
+    desired = task.desired[]
+    return linear(A) * v̇ + linear(Ȧv) - desired
+end
