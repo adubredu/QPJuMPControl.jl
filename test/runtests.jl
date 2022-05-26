@@ -1,6 +1,13 @@
-using QPControl
+using QPJuMPControl
 using Test
+using RigidBodyDynamics
+using JuMP 
+using OSQP 
+using Random 
+using StaticArrays
 
-@testset "QPControl.jl" begin
-    # Write your tests here.
-end
+const QPC = QPJuMPControl 
+const RBD = RigidBodyDynamics
+
+include("tasks.jl")
+

@@ -1,7 +1,20 @@
-name = "QPControl"
+name = "QPJuMPControl"
 uuid = "9b85d162-de8b-4500-a2ae-07b1be212942"
 authors = ["Alphonsus Adu-Bredu"]
 version = "0.1.0"
+
+[deps]
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MeshCat = "283c5d60-a78f-5afe-a0af-af636b173e11"
+MeshCatMechanisms = "6ad125db-dd91-5488-b820-c1df6aab299d"
+OSQP = "ab2f91bb-94b4-55e3-9ba0-7f65df51de79"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+RigidBodyDynamics = "366cf18f-59d5-5db9-a4de-86a9f6786172"
+Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StaticUnivariatePolynomials = "6f584044-cad5-5b68-a429-1e244a824f76"
 
 [compat]
 julia = "1"
