@@ -12,15 +12,39 @@ using Rotations
 
 const RBD = RigidBodyDynamics
 
+include("contacts.jl")
 include("tasks.jl")
+include("exceptions.jl")
+include(joinpath("lowlevel", "momentum.jl"))
+include(joinpath("lowlevel", "se3pdcontroller.jl"))
+include(joinpath("highlevel", "standing.jl"))
+include(joinpath("trajectories", "trajectories.jl"))
 
+# Task-related
 export 
+    AbstractMotionTask,
     SpatialAccelerationTask,
     AngularAccelerationTask,
     LinearAccelerationTask,
     LinearMomentumRateTask,
     JointAccelerationTask,
     MomentumRateTask,
-    PointAccelerationTask
+    PointAccelerationTask, 
+    setdesired!
+
+# Low-level 
+export 
+    MomentumBasedController,
+    SE3PDController,
+    addtask!,
+    addcontact!,
+    regularize!,
+    centroidal_frame 
+
+# High-level 
+export 
+    StandingController
+
+
 
 end
