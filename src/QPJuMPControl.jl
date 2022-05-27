@@ -9,6 +9,7 @@ using StaticArrays
 using JuMP
 using OSQP 
 using Rotations 
+using StaticUnivariatePolynomials
 
 const RBD = RigidBodyDynamics
 
@@ -18,7 +19,7 @@ include("exceptions.jl")
 include(joinpath("lowlevel", "momentum.jl"))
 include(joinpath("lowlevel", "se3pdcontroller.jl"))
 include(joinpath("highlevel", "standing.jl"))
-include(joinpath("trajectories", "trajectories.jl"))
+include(joinpath("trajectories", "trajectories.jl")) 
 
 # Task-related
 export 
@@ -45,6 +46,7 @@ export
 export 
     StandingController
 
-
+export
+    SE3Trajectory
 
 end

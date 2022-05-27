@@ -70,14 +70,14 @@ function interpolate(y0, yf, α)
 end
 
 function interpolate(y0::Rotation{3}, yf::Rotation{3}, α)
-    interpolate(Quat(y0), Quat(yf), α)
+    interpolate(QuatRotation(y0), QuatRotation(yf), α)
 end
 
-function interpolate(y0::Quat, yf::Quat, α)
+function interpolate(y0::QuatRotation, yf::QuatRotation, α)
     Δy = AngleAxis(y0 \ yf)
     angle = rotation_angle(Δy)
     axis = rotation_axis(Δy)
-    y = y0 * Quat(AngleAxis(α * angle, axis...))
+    y = y0 * QuatRotation(AngleAxis(α * angle, axis...))
     dydα = axis * angle # Lie derivative
     y, dydα
 end

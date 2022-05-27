@@ -26,17 +26,16 @@ end
 
 struct ContactPoint{N}
     normal_aligned_frame::CartesianFrame3D
-    ρ::Vector{N, VariableRef}
-    force_local::FreeVector3D{Vector{3, VariableRef}}
+    ρ::Vector{VariableRef}
+    force_local::FreeVector3D{Vector{VariableRef}}
     wrench_world::Wrench{VariableRef}
     position::Any 
     normal::Any 
     μ::Any 
     weight::Ref{Float64}
-    maxnormalforce::Ref{Float64}
+    maxnormalforce::Ref{Float64} 
 
-    function ContactPoint{N}(
-            position::Point3D, normal::FreeVector3D, μ::Float64, state::MechanismState, model::JuMP.Model) where N 
+    function ContactPoint{N}(position::Point3D, normal::FreeVector3D, μ::Float64, state::MechanismState, model::JuMP.Model) where N 
         
         #frames 
         normal_aligned_frame = CartesianFrame3D()
@@ -59,11 +58,11 @@ struct ContactPoint{N}
         toroot = transform_to_root(state_param, position.frame) * z_up_transform(position, normal, normal_aligned_frame)
         hat = RBD.Spatial.hat 
 
-        @constraint(model, force_local.v == basis * ρ)
-        @constraint(model, ρ >= zeros(N))
-        @constraint(model, ρ <= maxρ)
-        @constraint(model, linear(wrench_world) == rotation(toroot)*force_local.v)
-        @constraint(model, angular(wrench_world) == hat(translation(toroot)) * linear(wrench_world))
+        # @constraint(model, force_local_vars .== basis * ρ)
+        @constraint(model, ρ .>= zeros(N))
+        @constraint(model, ρ .<= maxρ)
+        @constraint(model, linear(wrench_world) .== rotation(toroot)*force_local.v)
+        @constraint(model, angular(wrench_world) .== hat(translation(toroot)) * linear(wrench_world))
 
         return ret 
     end

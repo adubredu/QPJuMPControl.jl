@@ -86,7 +86,7 @@ end
         @test ydd ≈ FreeVector3D(f, 0.0, 0.0, 0.0) atol=1e-15
     end
 
-    let angle = π / 2, axis = SVector(1.0, 0.0, 0.0), y0 = one(Quat), yf = Quat(AngleAxis(angle, axis...))
+    let angle = π / 2, axis = SVector(1.0, 0.0, 0.0), y0 = one(QuatRotation), yf = QuatRotation(AngleAxis(angle, axis...))
         traj = Interpolated(0.0, 1.0, y0, yf)
 
         y = traj(0.0)
@@ -96,7 +96,7 @@ end
         @test y ≈ yf atol=1e-15
 
         y, yd, ydd = traj(0.5, Val(2))
-        @test y ≈ Quat(AngleAxis(0.5 * angle, axis...)) atol=1e-15
+        @test y ≈ QuatRotation(AngleAxis(0.5 * angle, axis...)) atol=1e-15
         @test normalize(yd) ≈ axis atol=1e-15
         @test norm(yd) ≈ abs(angle) atol=1e-15
         @test ydd ≈ SVector(0.0, 0.0, 0.0) atol=1e-15
@@ -208,7 +208,7 @@ end
 end
 
 @testset "SE(3)" begin
-    angular = let angle = π / 2, axis = SVector(1.0, 0.0, 0.0), y0 = one(Quat), yf = Quat(AngleAxis(angle, axis...))
+    angular = let angle = π / 2, axis = SVector(1.0, 0.0, 0.0), y0 = one(QuatRotation), yf = QuatRotation(AngleAxis(angle, axis...))
         Interpolated(0.0, 1.0, y0, yf)
     end
     linear = Interpolated(0.0, 1.0, SVector(0.0, 1.0, 2.0), SVector(2.0, 3.0, 4.0))
