@@ -42,23 +42,23 @@ struct ContactPoint{N}
         worldframe = root_frame(state.mechanism)
 
         # variables 
-        @variable(model, ρ[1:N])
-        @variable(model, force_local_vars[1:3])
-        force_local = FreeVector3D(normal_aligned_frame, force_local_vars)
-        @variable(model, wrench_angular[1:3])
-        @variable(model, wrench_linear[1:3])
+        ρ = @variable(model, [1:N])
+        force_local_vars = @variable(model, [1:3])
+        force_local = FreeVector3D(normal_aligned_frame, force_local_vars) 
+        wrench_angular = @variable(model, [1:3])
+        wrench_linear = @variable(model, [1:3])
         wrench_world = Wrench(worldframe, wrench_angular, wrench_linear)
 
         ret = new{N}(normal_aligned_frame, ρ, force_local, wrench_world, position, normal, μ, Ref(0.0), Ref(0.0))
 
         basis = forcebasis(μ, Val(N))
         maxnormalforce = ret.maxnormalforce[]
-        maxρ = (maxnormalforce / (N * sqrt(μ*μ + 1)) * ones(N))
+        maxρ = (maxnormalforce / (N * sqrt(μ*μ + 1))) * ones(N)
         state_param = state 
         toroot = transform_to_root(state_param, position.frame) * z_up_transform(position, normal, normal_aligned_frame)
         hat = RBD.Spatial.hat 
 
-        # @constraint(model, force_local_vars .== basis * ρ)
+        # @constraint(model, force_local.v .== basis * ρ)
         @constraint(model, ρ .>= zeros(N))
         @constraint(model, ρ .<= maxρ)
         @constraint(model, linear(wrench_world) .== rotation(toroot)*force_local.v)

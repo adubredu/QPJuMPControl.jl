@@ -39,6 +39,7 @@ export
     SE3PDController,
     addtask!,
     addcontact!,
+    disable!,
     regularize!,
     centroidal_frame 
 

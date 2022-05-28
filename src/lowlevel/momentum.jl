@@ -13,16 +13,18 @@ mutable struct MomentumBasedController{N, S<:MechanismState}
     initialized::Bool 
 
     function MomentumBasedController{N}(
-        mechanism::Mechanism{Float64}, optimizer, floatingjoint=nothing)   where {N}
+        mechanism::Mechanism{Float64}, optimizer; floatingjoint=nothing)   where {N}
         state = MechanismState(mechanism)
         result = DynamicsResult(mechanism)
         floating_joint_velocity_range = floatingjoint === nothing ? (1 : 0) : velocity_range(state, floatingjoint)
+        worldframe = root_frame(mechanism)
         centroidalframe = CartesianFrame3D("centroidal")
         nv = num_velocities(state)
         momentum_matix = MomentumMatrix(worldframe, zeros(3, nv), zeros(3, nv)) 
         contacts = Dict{RigidBody{Float64}, Vector{ContactPoint{N}}}()
         contactwrenches = Dict{BodyID, Wrench{Float64}}()
         qpmodel = JuMP.Model(optimizer)
+        # set_silent(qpmodel)
         @variable(qpmodel, v̇[1:nv])
         objective = @expression(qpmodel, 0 * v̇[1]^2) #add_to_expression!(ey, 1.0, y[2], y[2])
 
@@ -37,7 +39,7 @@ Base.show(io::IO, controller::MomentumBasedController{N, S}) where {N, S} = prin
 centroidal_frame(controller::MomentumBasedController) = controller.centroidalframe
 
 
-function (controller::MomentumBasedController)(τ::AbstractVector, t::Number, x::Union{<:Vector, <:MechanismState}; sense=Min)
+function (controller::MomentumBasedController)(τ::AbstractVector, t::Number, x::Union{<:Vector, <:MechanismState})
     if !controller.initialized 
         initialize!(controller)
         controller.initialized = true
@@ -58,17 +60,22 @@ function (controller::MomentumBasedController)(τ::AbstractVector, t::Number, x:
     vals = value.(controller.v̇)
     @inbounds for i in eachindex(vals)
         result.v̇[i] = vals[i]
+        # @show vals[i]
     end
     empty!(contactwrenches)
-    for body in keys(controller.contacts)
+    for body in keys(contacts)
         contactwrench = RBD.zero(Wrench{Float64}, worldframe)
-        for data in controller.contacts[body]
-            wl = value.(wrench_linear)
-            wa = value.(wrench_angular)
+        for data in contacts[body]
+            # wl = value.(wrench_linear)
+            # wa = value.(wrench_angular)
+            wl = value.(linear(data.wrench_world))
+            wa = value.(angular(data.wrench_world))
+            # @show wa, wl
             wrench_world = Wrench(worldframe, wa, wl)
             contactwrench += wrench_world 
         end
-        contactwrenhes[BodyID(body)] = contactwrench 
+        # @show typeof(contactwrench)
+        contactwrenches[BodyID(body)] = contactwrench 
     end
 
     inverse_dynamics!(τ, result.jointwrenches, result.accelerations, state, result.v̇, contactwrenches)
@@ -88,7 +95,7 @@ function addtask!(controller::MomentumBasedController, task::AbstractMotionTask)
     model = controller.qpmodel 
     err = task_error(task, model, controller.state, controller.v̇)
     taskdim = dimension(task)
-    @constraint(model, err==zeros(taskdim))
+    @constraint(model, err.==zeros(taskdim))
     nothing 
 end
 
@@ -108,7 +115,7 @@ function add_task_error_slack_variables!(controller::MomentumBasedController, ta
     model = controller.qpmodel 
     state = controller.state 
     v̇ = controller.v̇
-    @variable(model, e[1:dimension(task)])
+    e = @variable(model, [1:dimension(task)])
     @constraint(model, e .== task_error(task, model, state, v̇))
     return e 
 end
@@ -138,7 +145,7 @@ setobjective!(controller)
 end
 
 function setobjective!(controller::MomentumBasedController)
-    @objective(controller.qpmodel, Minimize, controller.objective)
+    @objective(controller.qpmodel, Min, controller.objective)
 end 
 
 function add_wrench_balance_constraint!(controller::MomentumBasedController{N}, joint::Joint) where N 
@@ -150,6 +157,7 @@ function add_wrench_balance_constraint!(controller::MomentumBasedController{N}, 
     A = momentum_matrix!(controller.momentum_matix, state)
     Ȧv = momentum_rate_bias(state)
     Wg = Wrench(center_of_mass(state) × fg, fg)
+    floatingbody = successor(joint, mechanism)
     qjoint = configuration(state, joint)
     H = transform_to_root(state, floatingbody)
     S = transform(motion_subspace(joint, qjoint), H)
@@ -163,7 +171,7 @@ function add_wrench_balance_constraint!(controller::MomentumBasedController{N}, 
         end 
     end
     nv = num_velocities(joint)
-    @constraint(qpmodel, transpose(angular(S)) * (angular(A) * v̇ + angular(Ȧv) - torque) + transpose(linear(S)) * (linear(A) * v̇ + linear(Ȧv) - force) == zeros(nv))
+    @constraint(qpmodel, transpose(angular(S)) * (angular(A) * v̇ + angular(Ȧv) - torque) + transpose(linear(S)) * (linear(A) * v̇ + linear(Ȧv) - force) .== zeros(nv))
 
     nothing 
 end

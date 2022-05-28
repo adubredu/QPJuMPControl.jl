@@ -180,6 +180,7 @@ setdesired!(task::JointAccelerationTask, desired) = set_velocity!(task.desired, 
 
 function task_error(task::JointAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
     desired = task.desired 
+    # @show desired
     v̇joint = v̇[velocity_range(state, task.joint)]
     return v̇joint - desired 
 end
