@@ -28,7 +28,7 @@ function setdesired!(task::SpatialAccelerationTask, desired::SpatialAcceleration
     nothing 
 end
 
-function task_error(task::SpatialAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::SpatialAccelerationTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     world_to_desired = inv(transform_to_root(state, task.desired[].frame))
     J = geometric_jacobian!(task.jacobian, state, task.path, world_to_desired)
 
@@ -69,7 +69,7 @@ function setdesired!(task::AngularAccelerationTask, desired::FreeVector3D)
     nothing 
 end
 
-function task_error(task::AngularAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::AngularAccelerationTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     world_to_desired = inv(transform_to_root(state, task.desired[].frame))
     J = geometric_jacobian!(task.jacobian, state, task.path, world_to_desired)
 
@@ -107,7 +107,7 @@ function setdesired!(task::LinearAccelerationTask, desired::FreeVector3D)
     nothing
 end
 
-function task_error(task::LinearAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::LinearAccelerationTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     world_to_desired = inv(transform_to_root(state, task.desired[].frame))
     J = geometric_jacobian!(task.jacobian, state, task.path, world_to_desired)
 
@@ -115,7 +115,7 @@ function task_error(task::LinearAccelerationTask, qpmodel, state::MechanismState
     J̇v = transform(state, bias, task.desired[].frame)
 
     desired = task.desired[].v 
-    return angular(J) * v̇ + angular(J̇v) - desired 
+    return linear(J) * v̇ + linear(J̇v) - desired 
 end
 
 
@@ -147,7 +147,7 @@ function setdesired!(task::PointAccelerationTask, desired::FreeVector3D)
     nothing
 end
 
-function task_error(task::PointAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::PointAccelerationTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     frame = task.desired[].frame 
     point_in_task_frame = transform(state, task.point, frame)
 
@@ -178,7 +178,7 @@ end
 dimension(task::JointAccelerationTask) = length(task.desired)
 setdesired!(task::JointAccelerationTask, desired) = set_velocity!(task.desired, task.joint, desired)
 
-function task_error(task::JointAccelerationTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::JointAccelerationTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     desired = task.desired 
     # @show desired
     v̇joint = v̇[velocity_range(state, task.joint)]
@@ -204,7 +204,7 @@ function momentum_rate_task_params(task, qpmodel, state, v̇)
     centroidal_to_world = Transform3D(centroidalframe, com.frame, com.v)
     world_to_centroidal = inv(centroidal_to_world)
     A = momentum_matrix!(task.momentum_matrix, state, world_to_centroidal)
-
+    
     Ȧv = transform(momentum_rate_bias(state), world_to_centroidal)
 
     return A, Ȧv 
@@ -217,7 +217,7 @@ function setdesired!(task::MomentumRateTask, desired::Wrench)
     task.desired[] = desired 
 end
 
-function task_error(task::MomentumRateTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::MomentumRateTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     A, Ȧv = momentum_rate_task_params(task, qpmodel, state, v̇)
     desired = task.desired[]
     return [angular(A) * v̇ + angular(Ȧv) - angular(desired);
@@ -244,7 +244,7 @@ function setdesired!(task::LinearMomentumRateTask, desired::FreeVector3D)
     task.desired[] = desired 
 end
 
-function task_error(task::LinearMomentumRateTask, qpmodel, state::MechanismState, v̇::Vector)
+function task_error(task::LinearMomentumRateTask, qpmodel, state::MechanismState, v̇::AbstractVector)
     A, Ȧ = momentum_rate_task_params(task, qpmodel, state, v̇)
     desired = task.desired[]
     return linear(A) * v̇ + linear(Ȧv) - desired

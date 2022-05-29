@@ -95,7 +95,7 @@ function addtask!(controller::MomentumBasedController, task::AbstractMotionTask)
     model = controller.qpmodel 
     err = task_error(task, model, controller.state, controller.v̇)
     taskdim = dimension(task)
-    @constraint(model, err.==zeros(taskdim))
+    @constraint(model, err .== zeros(taskdim))
     nothing 
 end
 
@@ -122,7 +122,7 @@ end
 
 function regularize!(controller::MomentumBasedController, joint::Joint, weight)
     v̇joint = controller.v̇[velocity_range(controller.state, joint)]
-    add_to_expression!(controller.objective, weight, v̇joint ⋅ v̇joint)
+    add_to_expression!(controller.objective, weight, v̇joint ⋅ v̇joint) 
 end
 
 function addcontact!(controller::MomentumBasedController{N}, body::RigidBody{Float64}, point::ContactPoint{N}) where N 

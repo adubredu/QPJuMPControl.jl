@@ -5,7 +5,6 @@
     rand_configuration!(state)
     nv = num_velocities(mechanism)
     qpmodel = Model(OSQP.Optimizer)
-    # @variable(qpmodel, v̇[1 : nv], start=0.0)
     v̇ = zeros(nv)
     for testnum = 1 : 1
         base = rand(bodies(mechanism))
@@ -22,7 +21,7 @@
 
         zero_velocity!(state)
         v̇0 = zeros(length(v̇))
-        @test err ≈ -SVector(desired) rtol=1e-2
+        @test err ≈ -SVector(desired) rtol=1e-4
 
         QPC.setdesired!(task, zero(desired))
         err = QPC.task_error(task, qpmodel, state, v̇)
@@ -35,8 +34,8 @@
         zero_velocity!(state)
         v̇rand = rand(nv)
         expected = SVector(transform(state, SpatialAcceleration(geometric_jacobian(state, p), v̇rand), bodyframe))
-        err = QPC.task_error(task, qpmodel, state, v̇)
-        # @test err ≈ expected atol = 1e-12
+        err = QPC.task_error(task, qpmodel, state, v̇rand)
+        @test err ≈ expected atol = 1e-12
 
     end
 end
@@ -54,8 +53,7 @@ end
         body = rand(setdiff(bodies(mechanism), [base]))
         p = RBD.path(mechanism, base, body)
         task = AngularAccelerationTask(mechanism, p)
-        @test QPC.dimension(task) == 3
-        err = QPC.task_error(task, qpmodel, state, v̇)
+        @test QPC.dimension(task) == 3 
 
         bodyframe = default_frame(body)
         baseframe = default_frame(base)
@@ -77,10 +75,9 @@ end
         zero_velocity!(state)
         err = QPC.task_error(task, qpmodel, state, v̇)
         v̇rand = rand(nv)
-        expected = angular(transform(state, SpatialAcceleration(geometric_jacobian(state, p), v̇rand), bodyframe))
-        v̇ = zeros(nv)
-        err = QPC.task_error(task, qpmodel, state, v̇) 
-        # @test err ≈ expected atol = 1e-12 
+        expected = angular(transform(state, SpatialAcceleration(geometric_jacobian(state, p), v̇rand), bodyframe)) 
+        err = QPC.task_error(task, qpmodel, state, v̇rand) 
+        @test err ≈ expected atol = 1e-12 
     end
 end
 
@@ -101,8 +98,8 @@ end
         QPC.setdesired!(task, rand())
     end
     for (joint, task) in tasks
-        err = QPC.task_error(task, qpmodel, state, v̇)
-        # @test err == v̇vals[joint] .- task.desired 
+        err = QPC.task_error(task, qpmodel, state, v̇vals)
+        @test err == v̇vals[joint] .- task.desired 
     end
 end
 
@@ -153,8 +150,8 @@ end
         v̇rand = rand(nv)
         J_point = point_jacobian(state, path_to_body, transform(state, point, baseframe))
         expected = point_velocity(J_point, v̇rand).v
-        err = QPC.task_error(task, qpmodel, state, v̇)
-        # @test err ≈ expected atol=1e-12
+        err = QPC.task_error(task, qpmodel, state, v̇rand)
+        @test err ≈ expected atol=1e-12
  
     end
 end
@@ -190,15 +187,15 @@ end
         err = QPC.task_error(task, qpmodel, state, v̇)
         @test err == zeros(3)
         rand_velocity!(state)
-        biasaccel = transform(state, -RBD.bias_acceleration(state, base) + RBD.bias_acceleration(state, body), bodyframe)
-        err = QPC.task_error(task, qpmodel, state, v̇)
-        # @test err == linear(biasaccel)
+        biasaccel = transform(state, -RBD.bias_acceleration(state, base) + RBD.bias_acceleration(state, body), bodyframe) 
+        err = QPC.task_error(task, qpmodel, state, v̇0)
+        @test err == linear(biasaccel)
 
         zero_velocity!(state)
-        err = QPC.task_error(task, qpmodel, state, v̇)
         v̇rand = rand(nv)
-        expected = linear(transform(state, SpatialAcceleration(geometric_jacobian(state, p), v̇rand), bodyframe))
-        # @test err ≈ expected atol = 1e-12
+        expected = linear(transform(state, SpatialAcceleration(geometric_jacobian(state, p), v̇rand), bodyframe)) 
+        err = QPC.task_error(task, qpmodel, state, v̇rand)
+        @test err ≈ expected atol = 1e-12
  
     end
 end
@@ -233,9 +230,9 @@ end
     @test err == SVector(Ȧv)
 
     zero_velocity!(state)
-    err = QPC.task_error(task, qpmodel, state, v̇)
     v̇rand = rand(nv)
-    expected = transform(Wrench(momentum_matrix(state), v̇rand), world_to_centroidal)
-    # @test err ≈ SVector(expected) atol = 1e-12
+    expected = transform(Wrench(momentum_matrix(state), v̇rand), world_to_centroidal) 
+    err = QPC.task_error(task, qpmodel, state, v̇rand)
+    @test err ≈ SVector(expected) atol = 1e-12
  
 end
