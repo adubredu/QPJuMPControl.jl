@@ -6,7 +6,7 @@
     nv = num_velocities(mechanism)
     qpmodel = Model(OSQP.Optimizer)
     v̇ = zeros(nv)
-    for testnum = 1 : 1
+    for testnum = 1 : 10
         base = rand(bodies(mechanism))
         body = rand(setdiff(bodies(mechanism), [base]))
         p = RBD.path(mechanism, base, body)
@@ -48,7 +48,7 @@ end
     nv = num_velocities(mechanism)
     v̇ =  zeros(nv)
     qpmodel = Model(OSQP.Optimizer)
-    for testnum = 1 : 1
+    for testnum = 1 : 10
         base = rand(bodies(mechanism))
         body = rand(setdiff(bodies(mechanism), [base]))
         p = RBD.path(mechanism, base, body)
@@ -111,7 +111,7 @@ end
     nv = num_velocities(mechanism)
     v̇ = zeros(nv)
     qpmodel = Model(OSQP.Optimizer)
-    for testnum = 1 : 1
+    for testnum = 1 : 10
         base = rand(bodies(mechanism))
         body = rand(setdiff(bodies(mechanism), [base]))
         path_to_body = RBD.path(mechanism, base, body)
@@ -165,7 +165,7 @@ end
     nv = num_velocities(mechanism)
     v̇ = zeros(nv)
     qpmodel = Model(OSQP.Optimizer)
-    for testnum = 1 : 1
+    for testnum = 1 : 10
         base = rand(bodies(mechanism))
         body = rand(setdiff(bodies(mechanism), [base]))
         p = RBD.path(mechanism, base, body)
