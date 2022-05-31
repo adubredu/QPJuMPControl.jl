@@ -154,7 +154,7 @@ function task_error(task::PointAccelerationTask, qpmodel, state::MechanismState,
     J = point_jacobian!(task.jacobian, state, task.path, point_in_task_frame)
 
     bias = -bias_acceleration(state, source(task.path)) + bias_acceleration(state, target(task.path))
-    J̇v = transform(state, bias, task.desired[].frame)
+    J̇v = transform(state, bias, frame)
 
     desired =  task.desired[].v 
 

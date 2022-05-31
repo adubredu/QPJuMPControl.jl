@@ -94,13 +94,19 @@
 # Automatically load contact points from each body in the mechanism and add them
 # to the controller. 
 # """
-function set_up_valkyrie_contacts!(controller::MomentumBasedController)
+function set_up_valkyrie_contacts!(controller::MomentumBasedController; parametric_contact_surface=false)
     valmechanism = controller.state.mechanism
     for body in bodies(valmechanism)
         for point in RBD.contact_points(body)
             position = RBD.Contact.location(point)
-            normal = FreeVector3D(position.frame, 0.0, 0.0, 1.0)
-            μ = point.model.friction.μ
+            if parametric_contact_surface
+                direction = normalize(randn(SVector{3}))
+                normal = FreeVector3D(position.frame, direction)
+                μ = rand()
+            else
+                normal = FreeVector3D(position.frame, 0.0, 0.0, 1.0)
+                μ = point.model.friction.μ
+            end
             
             addcontact!(controller, body, position, normal, μ)
         end
@@ -144,7 +150,7 @@ end
 #     end 
 # end
 
-const MAX_NORMAL_FORCE_FIXME = 1e9
+# const MAX_NORMAL_FORCE_FIXME = 1e9
 
 # @testset "achievable momentum rate" begin
 #     Random.seed!(533454)
@@ -157,9 +163,10 @@ const MAX_NORMAL_FORCE_FIXME = 1e9
 #     N = 4
 #     controller = MomentumBasedController{N}(mechanism, OSQP.Optimizer, floatingjoint=floatingjoint)
 
-#     set_up_valkyrie_contacts!(controller)
+#     set_up_valkyrie_contacts!(controller; parametric_contact_surface=true)
 #     ḣtask = MomentumRateTask(mechanism, centroidal_frame(controller))
 #      #, 1.0)
+#     #  addtask!(controller, ḣtask)
 
 #     for joint in tree_joints(mechanism)
 #         regularize!(controller, joint, 1e-6)
@@ -225,7 +232,7 @@ end
 
     rand!(state)
     N = 4
-    controller = MomentumBasedController{N}(mechanism, OSQP.Optimizer, floatingjoint=floatingjoint)
+    controller = MomentumBasedController{N}(mechanism, OSQP.Optimizer; floatingjoint=floatingjoint)
     # @show all_constraints(controller.qpmodel, AffExpr, MOI.EqualTo{Float64})
     body = val.feet[left]
     base = val.palms[right]
@@ -256,7 +263,7 @@ end
     
     controller(τ, 0., state)
     # @show list_of_constraint_types(controller.qpmodel)
-    @show length(all_constraints(controller.qpmodel, AffExpr, MOI.EqualTo{Float64}))
+    # @show length(all_constraints(controller.qpmodel, AffExpr, MOI.EqualTo{Float64}))
     v̇ = controller.result.v̇
     spatial_accelerations!(accels, state, v̇)
     accel = relative_acceleration(accels, body, base)

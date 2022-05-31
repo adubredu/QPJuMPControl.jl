@@ -54,7 +54,7 @@ function (controller::MomentumBasedController)(τ::AbstractVector, t::Number, x:
     worldframe = root_frame(state.mechanism)
 
     copyto!(state, x)
-    @objective(qpmodel, Min, objective)
+    setobjective!(controller)
     optimize!(qpmodel)
     
     vals = value.(controller.v̇)
@@ -95,7 +95,12 @@ function addtask!(controller::MomentumBasedController, task::AbstractMotionTask)
     model = controller.qpmodel 
     err = task_error(task, model, controller.state, controller.v̇)
     taskdim = dimension(task)
-    @constraint(model, err .== zeros(taskdim))
+    taskcon = constraint_by_name(model, "taskconstraint")
+    if !isnothing(taskcon) 
+        delete(model, taskcon)
+        unregister(model, :taskconstraint)
+    end
+    @constraint(model, taskconstraint, err .== zeros(taskdim))
     nothing 
 end
 

@@ -1,5 +1,3 @@
-
-  
 """
 z_up_transform(origin::Point3D, zaxis::FreeVector3D, from::CartesianFrame3D)
 Return `Transform3D` from `from` to the frame in which both `origin` and `zaxis`
@@ -58,7 +56,7 @@ struct ContactPoint{N}
         toroot = transform_to_root(state_param, position.frame) * z_up_transform(position, normal, normal_aligned_frame)
         hat = RBD.Spatial.hat 
 
-        # @constraint(model, force_local.v .== basis * ρ)
+        @constraint(model, force_local.v .== basis * ρ)
         @constraint(model, ρ .>= zeros(N))
         @constraint(model, ρ .<= maxρ)
         @constraint(model, linear(wrench_world) .== rotation(toroot)*force_local.v)
