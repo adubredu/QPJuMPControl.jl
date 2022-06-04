@@ -45,6 +45,10 @@ point = Point3D(default_frame(body), 0., 0, -2.05)
 task = PointAccelerationTask(mechanism,
     path(mechanism, root_body(mechanism), body),
     point)
+err = QPJuMPControl.task_error(task, lowlevel.qpmodel, MechanismState(mechanism), lowlevel.v̇)
+@show err 
+
+##=
 # Add the task to the controller. This will create a hard constraint
 # in the controller to force it to produce the desired point acceleration.
 # addtask!(lowlevel, task)
@@ -87,8 +91,9 @@ highlevel = let lowlevel = lowlevel, task = task, state = MechanismState(mechani
         # Set the desired acceleration in the low-level controller
         setdesired!(task, p̈des)
         
-        # Run the low-level controller to produce commanded torques
+        # Run the low-level controller to produce commanded torques  
         addtask!(lowlevel, task) 
+        println(lowlevel.qpmodel)
 
         lowlevel(τ, t, x)
     end
@@ -106,3 +111,4 @@ setelement!(mvis, point)
 
 # Animate the resulting trajectory in the visualizer
 setanimation!(mvis, ts, qs)
+# =#

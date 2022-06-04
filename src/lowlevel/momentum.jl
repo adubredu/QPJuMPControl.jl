@@ -23,16 +23,15 @@ mutable struct MomentumBasedController{N, S<:MechanismState}
         momentum_matix = MomentumMatrix(worldframe, zeros(3, nv), zeros(3, nv)) 
         contacts = Dict{RigidBody{Float64}, Vector{ContactPoint{N}}}()
         contactwrenches = Dict{BodyID, Wrench{Float64}}()
-        qpmodel = JuMP.Model(optimizer)
+        qpmodel = JuMP.Model(optimizer) 
         # set_silent(qpmodel)
         @variable(qpmodel, v̇[1:nv])
+        qpmodel.ext[:taskconstraint] = @constraint(qpmodel, v̇[1] == v̇[1])
         objective = @expression(qpmodel, 0 * v̇[1]^2) #add_to_expression!(ey, 1.0, y[2], y[2])
 
         new{N, typeof(state)}(state, result, floatingjoint, floating_joint_velocity_range, centroidalframe, momentum_matix, contacts, contactwrenches, qpmodel, v̇, objective, false)
     end
 end
-
-
 
 Base.show(io::IO, controller::MomentumBasedController{N, S}) where {N, S} = print(io, "MomentumBasedController{$N, $S}(…)")
 
@@ -93,14 +92,27 @@ end
 
 function addtask!(controller::MomentumBasedController, task::AbstractMotionTask)
     model = controller.qpmodel 
-    err = task_error(task, model, controller.state, controller.v̇)
-    taskdim = dimension(task)
-    taskcon = constraint_by_name(model, "taskconstraint")
-    if !isnothing(taskcon) 
-        delete(model, taskcon)
-        unregister(model, :taskconstraint)
+    err = task_error(task, model, controller.state, controller.v̇) 
+    @show err
+    println(" ")
+
+    # taskcon = constraint_by_name(model, "taskconstraint")
+    # if !isnothing(taskcon) 
+    #     delete(model, taskcon)
+    #     unregister(model, :taskconstraint)
+    # end
+    # @constraint(model, taskconstraint, err .== zeros(taskdim))
+    if all(is_valid.(model, model.ext[:taskconstraint]))
+        delete.(model, model.ext[:taskconstraint])
     end
-    @constraint(model, taskconstraint, err .== zeros(taskdim))
+    constraints = AffExpr[]
+    for c in err 
+        if !isempty(c.terms)  push!(constraints, c) end
+    end
+    constdim = length(constraints)
+    model.ext[:taskconstraint] = @constraint(model, constraints .== zeros(constdim))
+    @show model.ext[:taskconstraint]
+    println(" ")
     nothing 
 end
 
