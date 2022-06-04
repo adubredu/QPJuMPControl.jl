@@ -45,16 +45,14 @@ point = Point3D(default_frame(body), 0., 0, -2.05)
 task = PointAccelerationTask(mechanism,
     path(mechanism, root_body(mechanism), body),
     point)
-err = QPJuMPControl.task_error(task, lowlevel.qpmodel, MechanismState(mechanism), lowlevel.v̇)
-@show err 
-
+err = QPJuMPControl.task_error(task, lowlevel.qpmodel, MechanismState(mechanism), lowlevel.v̇) 
 ##=
 # Add the task to the controller. This will create a hard constraint
 # in the controller to force it to produce the desired point acceleration.
 # addtask!(lowlevel, task)
 # If we wanted to just add a penalty to the objective function instead,
 # we could do:
-    # addtask!(lowlevel, task, 1.0) 
+    addtask!(lowlevel, task, 1.0) 
 # for some real value `cost`. 
 
 # Also add a small regularization term to avoid unbounded joint 
@@ -92,8 +90,7 @@ highlevel = let lowlevel = lowlevel, task = task, state = MechanismState(mechani
         setdesired!(task, p̈des)
         
         # Run the low-level controller to produce commanded torques  
-        addtask!(lowlevel, task) 
-        println(lowlevel.qpmodel)
+        addtask!(lowlevel, task)  
 
         lowlevel(τ, t, x)
     end

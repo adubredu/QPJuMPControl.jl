@@ -16,7 +16,7 @@ using StaticUnivariatePolynomials
 const QPC = QPJuMPControl 
 const RBD = RigidBodyDynamics
 
-# include("tasks.jl")
-# include("trajectories.jl")
+include("tasks.jl")
+include("trajectories.jl")
 include("controller.jl")
 
